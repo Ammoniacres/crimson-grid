@@ -1,5 +1,6 @@
 #define COMBAT_COOLDOWN_LENGTH 45 SECONDS
 #define REVEAL_COOLDOWN_LENGTH 15 SECONDS
+#define GATHERING_RANGE 3
 
 /datum/discipline/obfuscate
 	name = "Obfuscate"
@@ -8,7 +9,7 @@
 ●● Unseen Presence: Passive
 ●●● Mask of a Thousand Faces: Manipulation + Performance (difficulty 7)
 ●●●● Vanish from the Mind's Eye: Charisma + Stealth (difficulty 6)
-●●●●● Cloak the Gathering: Passive"}
+●●●●● Cloak the Gathering: Passive + Wits"}
 	icon_state = "obfuscate"
 	power_type = /datum/discipline_power/obfuscate
 
@@ -28,6 +29,9 @@
 		COMSIG_MOB_ITEM_ATTACK,
 		COMSIG_LIVING_GRAB
 	)
+	var/mob/living/carbon/human/cloaked = null
+	var/list/in_cloak_range = list()
+	var/list/currently_cloaked = list()
 
 /datum/discipline_power/obfuscate/proc/on_discipline_activation(datum/source, datum/discipline_power/activated_power, atom/target)
 	SIGNAL_HANDLER
@@ -374,14 +378,29 @@
 
 /datum/discipline_power/obfuscate/cloak_the_gathering/activate()
 	. = ..()
-	RegisterSignals(owner, aggressive_signals, PROC_REF(on_combat_signal))
-	RegisterSignal(owner, COMSIG_POWER_ACTIVATE, PROC_REF(on_discipline_activation))
-	RegisterSignal(owner, COMSIG_MOB_SAY, PROC_REF(on_talk))
+	in_cloak_range = viewers(GATHERING_RANGE, owner)
+	for(cloaked in in_cloak_range)
+		if(HAS_TRAIT(cloaked, TRAIT_OBFUSCATED))
+			return
+		currently_cloaked += cloaked //adds index to list
+		ADD_TRAIT(cloaked, TRAIT_OBFUSCATED, OBFUSCATE_TRAIT)
+		RegisterSignal(cloaked, aggressive_signals, PROC_REF(on_combat_signal))
+		RegisterSignal(cloaked, COMSIG_POWER_ACTIVATE, PROC_REF(on_discipline_activation))
+		RegisterSignal(cloaked, COMSIG_MOB_SAY, PROC_REF(on_talk))
 
 	for(var/mob/living/carbon/human/npc/NPC in GLOB.npc_list)
-		if (NPC.danger_source == owner)
-			NPC.danger_source = null
-	ADD_TRAIT(owner, TRAIT_OBFUSCATED, OBFUSCATE_TRAIT)
+		for(cloaked in in_cloak_range)
+			if (NPC.danger_source == cloaked)
+				NPC.danger_source = null
+	CALLBACK(src, PROC_REF(in_range_cloak_source), in_cloak_range, 3 TURNS, TIMER_STOPPABLE | TIMER_DELETE_ME)
+
+/datum/discipline_power/obfuscate/cloak_the_gathering/proc/in_range_cloak_source()
+	for(cloaked in currently_cloaked)
+		if((get_dist(cloaked, owner) > (GATHERING_RANGE + owner.st_get_stat(STAT_WITS))) || IS_UNCONSCIOUS(cloaked) || IS_DEAD_OR_FAKING(cloaked)) //in tabletop wits decides how many people you can cloak- here it's better to simply use it as a continual check for cloaked groups. The more wits the owner has, the easier it is to take a gathering with you unabated.
+			REMOVE_TRAIT(cloaked, TRAIT_OBFUSCATED, OBFUSCATE_TRAIT)
+			UnregisterSignal(cloaked, aggressive_signals)
+			UnregisterSignal(cloaked, list(COMSIG_POWER_ACTIVATE, COMSIG_MOB_SAY))
+			currently_cloaked -= cloaked //removes index from list
 
 /datum/discipline_power/obfuscate/cloak_the_gathering/deactivate()
 	. = ..()
@@ -392,3 +411,4 @@
 
 #undef COMBAT_COOLDOWN_LENGTH
 #undef REVEAL_COOLDOWN_LENGTH
+#undef GATHERING_RANGE

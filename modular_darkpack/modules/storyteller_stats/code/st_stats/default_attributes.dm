@@ -55,5 +55,5 @@
 
 /datum/st_stat/attribute/wits
 	name = "Wits"
-	description = "A character's ability to think on her feet and react quickly to a certain situation. It also reflects a character's general cleverness. Used in Necromancy."
+	description = "A character's ability to think on her feet and react quickly to a certain situation. It also reflects a character's general cleverness. Used in Necromancy, and higher levels of Obfuscate."
 	subcategory = "Mental"
