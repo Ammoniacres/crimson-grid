@@ -414,22 +414,21 @@
 	if((get_dist(cloaked, owner) > (GATHERING_RANGE + owner.st_get_stat(STAT_WITS))) || IS_UNCONSCIOUS(cloaked) || IS_DEAD_OR_FAKING(cloaked)) //in tabletop wits decides how many people you can cloak- here it's better to simply use it as a continual check for cloaked groups. The more wits the owner has, the easier it is to take a gathering with you unabated.
 		if(outranged == FALSE)
 			addtimer(CALLBACK(src, PROC_REF(in_range_cloak_source), cloaked), 3 TURNS)
-			to_chat(cloaked, span_notice("You feel distant from your source of shadow, if you don't get closer- you'll be revealed."))
+			to_chat(cloaked, span_warning("You feel distant from your source of shadow, if you don't get closer- you'll be revealed."))
 			outranged = TRUE
 			return
-		to_chat(cloaked, span_notice("The deception shared with you fades, and the world sees you once more."))
+		to_chat(cloaked, span_warning("The deception shared with you fades, and the world sees you once more."))
 		currently_cloaked -= cloaked //removes index from list
 		deactivate_cloaked(cloaked)
 		outranged = FALSE
 	else	// Cloak participant in range of discipline user
+		to_chat(cloaked, span_notice("You feel in comfort, as the unminds fail to see the ones in their midst."))
 		outranged = FALSE
 
 /datum/discipline_power/obfuscate/cloak_the_gathering/activate()
 	. = ..()
 	in_cloak_range = viewers((GATHERING_RANGE+owner.st_get_stat(STAT_WITS)), owner)
 	for(var/mob/living/carbon/human/cloaked in in_cloak_range)
-		if(isnpc(cloaked)) //don't obfuscate the plebs
-			return
 		currently_cloaked += cloaked //adds index to list
 		RegisterSignal(cloaked, aggressive_signals, PROC_REF(on_combat_signal_gathering))
 		RegisterSignal(cloaked, COMSIG_POWER_ACTIVATE, PROC_REF(on_discipline_activation_gathering))
