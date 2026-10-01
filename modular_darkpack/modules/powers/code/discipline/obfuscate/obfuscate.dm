@@ -1,6 +1,6 @@
 #define COMBAT_COOLDOWN_LENGTH 45 SECONDS
 #define REVEAL_COOLDOWN_LENGTH 15 SECONDS
-#define GATHERING_RANGE 3
+#define GATHERING_RANGE 2
 
 /datum/discipline/obfuscate
 	name = "Obfuscate"
@@ -426,7 +426,7 @@
 
 /datum/discipline_power/obfuscate/cloak_the_gathering/activate()
 	. = ..()
-	in_cloak_range = viewers(GATHERING_RANGE, owner)
+	in_cloak_range = viewers((GATHERING_RANGE+owner.st_get_stat(STAT_WITS)), owner)
 	for(var/mob/living/carbon/human/cloaked in in_cloak_range)
 		if(isnpc(cloaked)) //don't obfuscate the plebs
 			return
